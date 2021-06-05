@@ -3,82 +3,78 @@ import './style.css'
 
 const scene = new THREE.Scene();
 
-const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-
 const renderer = new THREE.WebGLRenderer({
   canvas: document.querySelector('#bg'),
 });
 
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
-camera.position.setZ(30);
-camera.position.setX(0);
 
-renderer.render(scene, camera);
+const sizes = {
+    width: window.innerWidth,
+    height: window.innerHeight
+}
 
-// Torus
+window.addEventListener('resize', () =>
+{
+    // Update sizes
+    sizes.width = window.innerWidth
+    sizes.height = window.innerHeight
 
-/*const torus = new THREE.Mesh(
-    new THREE.TorusGeometry(10, 3, 16, 100),
-    new THREE.MeshToonMaterial({ color: 0xff6347, wireframe: true })
-);
+    // Update camera
+    camera.aspect = sizes.width / sizes.height
+    camera.updateProjectionMatrix()
 
-torus.geometry.center();
+    // Update renderer
+    renderer.setSize(sizes.width, sizes.height)
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+})
 
-const outer_torus = new THREE.Mesh(
-    new THREE.TorusGeometry(20, 1, 16, 100),
-    new THREE.MeshToonMaterial({ color: 0x545478, wireframe: true })
-)
+/**
+* Camera
+*/
 
-outer_torus.geometry.center();
+// Base camera
+const camera = new THREE.PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 100)
+camera.position.x = 0
+camera.position.y = 0
+camera.position.z = 10
+scene.add(camera)
 
-scene.add(torus);
-scene.add(outer_torus);*/
+
+const mat_metal = new THREE.MeshStandardMaterial({ color: 0xff6347, metalness: 0.7, roughness: 0.1 });
+const mat_toon = new THREE.MeshToonMaterial({ color: 0x5599ff });
 
 const torus_1 = new THREE.Mesh(
-  new THREE.TorusGeometry(5, 0.5, 16, 100),
-  new THREE.MeshToonMaterial({ color: 0xff6347, wireframe: false })
+    new THREE.TorusGeometry(5, 0.5, 16, 100),
+    mat_toon
 );
 
-const torus_2 = new THREE.Mesh(
-  new THREE.TorusGeometry(7.5, 0.5, 16, 100),
-  new THREE.MeshToonMaterial({ color: 0xff6347, wireframe: false })
-);
-
-const torus_3 = new THREE.Mesh(
-  new THREE.TorusGeometry(10, 0.5, 16, 100),
-  new THREE.MeshToonMaterial({ color: 0xff6347, wireframe: false })
+const ico_1 = new THREE.Mesh(
+    new THREE.SphereBufferGeometry(1, 8, 8,),
+    mat_metal
 );
 
 torus_1.geometry.center();
-torus_2.geometry.center();
-torus_3.geometry.center();
+ico_1.geometry.center();
 
-scene.add(torus_1, torus_2, torus_3);
-
-torus_1.rotation.x = 30;
-torus_2.rotation.x = -30;
-
-
-// Icosahedron
-
-const ico = new THREE.Mesh(
-    new THREE.IcosahedronGeometry(1, 0),
-    new THREE.MeshStandardMaterial({ color: 0xf31232, wireframe: false, emissive: 0xffffff })
-);
-
-scene.add(ico);
+scene.add(torus_1);
+scene.add(ico_1);
 
 // Lights
 
 const pointLight = new THREE.PointLight(0xffffff);
-pointLight.position.set(0, 0, 2);
+pointLight.position.set(-30, 50, 30);
 scene.add(pointLight)
 
-//scene.add(pointLight);
+const pointLight2 = new THREE.PointLight(0x2121ff);
+pointLight2.position.set(-15, 30, 20);
+scene.add(pointLight2)
 
 const ambientLight = new THREE.AmbientLight(0x888888);
 scene.add(ambientLight);
+
+//Window resize
 
 window.addEventListener('resize', onWindowResize);
 
@@ -89,40 +85,33 @@ function onWindowResize(){
     renderer.setSize( window.innerWidth, window.innerHeight )
 }
 
-let time = 0;
+renderer.setSize(sizes.width, sizes.height)
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
-// Animation Loop
+/**
+ * Animate
+ */
 
-function animate(t) {
-    requestAnimationFrame(animate);
-  
-    let rotation_speed = 0.01
-    //torus.rotation.x += 0.024546;
-    //torus.rotation.y += 0.003333;
-    //torus.rotation.z += 0.0147687;
-    torus_1.rotateY(rotation_speed+0.005)
-    torus_2.rotateY(rotation_speed-0.005)
-    torus_3.rotateY(rotation_speed)
+const clock = new THREE.Clock()
 
-    ico.rotation.x += -0.01;
-    ico.rotation.y += -0.025;
-    ico.rotation.z += -0.05;
+const tick = () =>
+{
 
-    ico.position.y = Math.sin(time) * 2
-    
-    time += 0.03
+    const elapsedTime = clock.getElapsedTime()
 
-    if(time > 2*Math.PI){
-      time = 0
-    }
-    
+    // Update objects
+    torus_1.rotation.y = .5 * elapsedTime
 
-  
-    //moon.rotation.x += 0.005;
-  
-    // controls.update();
-  
-    renderer.render(scene, camera);
-  }
-  
-  animate();
+    ico_1.position.y = Math.sin(elapsedTime)
+
+    // Update Orbital Controls
+    // controls.update()
+
+    // Render
+    renderer.render(scene, camera)
+
+    // Call tick again on the next frame
+    window.requestAnimationFrame(tick)
+}
+
+tick()
